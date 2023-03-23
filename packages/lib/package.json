@@ -1,0 +1,13 @@
+{
+  "name": "lib",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "main": "dist/index.mjs",
+  "dependencies": {
+    "rollup": "^3.20.0",
+    "vite": "^4.2.1"
+  }
+}
