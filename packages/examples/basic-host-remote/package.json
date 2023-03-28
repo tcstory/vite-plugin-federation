@@ -1,0 +1,12 @@
+{
+  "name": "basic-host-remote",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+  },
+  "license": "MulanPSL-2.0",
+  "devDependencies": {
+    "rollup": "^3.20.0",
+    "vite-plugin-federation": "workspace:*"
+  }
+}

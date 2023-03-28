@@ -1,5 +1,5 @@
 {
-  "name": "lib",
+  "name": "vite-plugin-federation",
   "version": "1.0.0",
   "scripts": {
     "build": "vite build",

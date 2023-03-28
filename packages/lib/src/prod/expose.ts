@@ -1,0 +1,106 @@
+import {
+  relative,
+  dirname,
+} from 'path'
+import type { VitePluginFederationConfig } from "../../types";
+import type { PluginHook } from "../../types/pluginHook";
+import type { OutputChunk } from 'rollup'
+import { ResolvedConfig } from "vite";
+import { createModule } from "./createModule";
+
+export default function createExposeHandler(
+  pluginConfig: VitePluginFederationConfig,
+  builderInfo: any
+): PluginHook {
+  const id = "\0__remoteEntryHelper__";
+
+  pluginConfig.exposes = pluginConfig.exposes ?? {};
+
+  const exposes = Object.keys(pluginConfig.exposes).map(function (key) {
+    const expose = {
+      entryName: key,
+      import: pluginConfig.exposes[key],
+      emitFile: null,
+      name: null,
+      id: null,
+    };
+    expose.name = `__federation_expose_${expose.entryName.replace(/[^0-9a-zA-Z_-]+/g, '')}`
+
+    return expose
+  });
+  const virtualFile = createModule(pluginConfig, exposes);
+
+  return {
+    name: "",
+    configResolved(config: ResolvedConfig) {
+      //
+    },
+    async buildStart() {
+      if (exposes.length > 0) {
+        this.emitFile({
+          fileName: `${
+            builderInfo.assetsDir ? builderInfo.assetsDir + "/" : ""
+          }${pluginConfig.filename}`,
+          type: "chunk",
+          id,
+          preserveSignature: "strict",
+        });
+
+        for (const expose of exposes) {
+          // const result = await this.resolve(expose.import)
+          expose.id = (await this.resolve(expose.import))?.id
+
+          if (!expose.id) {
+            this.error(
+              `Cannot find file ${expose.import}, please check your 'exposes.import' config.`
+            )
+          }
+
+          expose.emitFile = this.emitFile({
+            type: 'chunk',
+            id: expose.id,
+            name: expose.name,
+            preserveSignature: 'allow-extension'
+          })
+        }
+      }
+    },
+    load(_id) {
+      if (_id === id) {
+        return virtualFile;
+      }
+      return null;
+    },
+    generateBundle(options, bundle) {
+      let remoteEntryChunk
+      for (const key in bundle) {
+        const chunk = bundle[key] as OutputChunk
+        if (chunk?.facadeModuleId === '\x00__remoteEntryHelper__') {
+          remoteEntryChunk = chunk
+          break
+        }
+      }
+      if (remoteEntryChunk) {
+        for (const expose of exposes) {
+          const key = Object.keys(bundle).find((key) => {
+            const chunk = bundle[key]
+            return chunk.name === expose.name
+          })
+
+          if (key) {
+            const chunk = bundle[key]
+            const fileRelativePath = relative(
+              dirname(remoteEntryChunk.fileName),
+              chunk.fileName
+            )
+            const slashPath = fileRelativePath.replace(/\\/g, '/')
+            remoteEntryChunk.code = remoteEntryChunk.code.replace(
+              expose.name,
+              `./${slashPath}`
+            )
+          }
+        }
+      }
+    }
+  };
+}

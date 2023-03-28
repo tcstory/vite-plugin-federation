@@ -12,6 +12,7 @@
     "typescript": "^5.0.2"
   },
   "scripts": {
+    "lint": "eslint --fix ./packages",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",

@@ -4,11 +4,9 @@
  */
 import { RenderedChunk } from "rollup";
 
-export default function federation(
-  options: VitePluginFederationOptions
-): Plugin;
+export default function federation(options: VitePluginFederationConfig): Plugin;
 
-declare interface VitePluginFederationOptions {
+declare interface VitePluginFederationConfig {
   /**
    * Modules that should be exposed by this container. When provided, property name is used as public name, otherwise public name is automatically inferred from request.
    */
