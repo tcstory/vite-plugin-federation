@@ -1,4 +1,5 @@
-import federation from "@originjs/vite-plugin-federation";
+import federation from 'vite-plugin-federation';
+import typescript from '@rollup/plugin-typescript';
 
 import pkg from "./package.json" assert { type: "json" };
 
@@ -11,6 +12,8 @@ export default {
         remote_app: "http://localhost:5001/remoteEntry.js",
       }
     }),
+
+    typescript(),
   ],
   output: [{ format: "esm", dir: pkg.main }],
 };

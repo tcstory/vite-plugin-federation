@@ -1,10 +1,7 @@
-import {
-  relative,
-  dirname,
-} from 'path'
+import { relative, dirname } from "path";
 import type { VitePluginFederationConfig } from "../../types";
 import type { PluginHook } from "../../types/pluginHook";
-import type { OutputChunk } from 'rollup'
+import type { OutputChunk } from "rollup";
 import { ResolvedConfig } from "vite";
 import { createModule } from "./createModule";
 
@@ -24,11 +21,14 @@ export default function createExposeHandler(
       name: null,
       id: null,
     };
-    expose.name = `__federation_expose_${expose.entryName.replace(/[^0-9a-zA-Z_-]+/g, '')}`
+    expose.name = `__federation_expose_${expose.entryName.replace(
+      /[^0-9a-zA-Z_-]+/g,
+      ""
+    )}`;
 
-    return expose
+    return expose;
   });
-  const virtualFile = createModule(pluginConfig, exposes);
+  const virtualFile = createModule(exposes);
 
   return {
     name: "",
@@ -48,20 +48,20 @@ export default function createExposeHandler(
 
         for (const expose of exposes) {
           // const result = await this.resolve(expose.import)
-          expose.id = (await this.resolve(expose.import))?.id
+          expose.id = (await this.resolve(expose.import))?.id;
 
           if (!expose.id) {
             this.error(
               `Cannot find file ${expose.import}, please check your 'exposes.import' config.`
-            )
+            );
           }
 
           expose.emitFile = this.emitFile({
-            type: 'chunk',
+            type: "chunk",
             id: expose.id,
             name: expose.name,
-            preserveSignature: 'allow-extension'
-          })
+            preserveSignature: "allow-extension",
+          });
         }
       }
     },
@@ -72,35 +72,35 @@ export default function createExposeHandler(
       return null;
     },
     generateBundle(options, bundle) {
-      let remoteEntryChunk
+      let remoteEntryChunk;
       for (const key in bundle) {
-        const chunk = bundle[key] as OutputChunk
-        if (chunk?.facadeModuleId === '\x00__remoteEntryHelper__') {
-          remoteEntryChunk = chunk
-          break
+        const chunk = bundle[key] as OutputChunk;
+        if (chunk?.facadeModuleId === "\x00__remoteEntryHelper__") {
+          remoteEntryChunk = chunk;
+          break;
         }
       }
       if (remoteEntryChunk) {
         for (const expose of exposes) {
           const key = Object.keys(bundle).find((key) => {
-            const chunk = bundle[key]
-            return chunk.name === expose.name
-          })
+            const chunk = bundle[key];
+            return chunk.name === expose.name;
+          });
 
           if (key) {
-            const chunk = bundle[key]
+            const chunk = bundle[key];
             const fileRelativePath = relative(
               dirname(remoteEntryChunk.fileName),
               chunk.fileName
-            )
-            const slashPath = fileRelativePath.replace(/\\/g, '/')
+            );
+            const slashPath = fileRelativePath.replace(/\\/g, "/");
             remoteEntryChunk.code = remoteEntryChunk.code.replace(
               expose.name,
               `./${slashPath}`
-            )
+            );
           }
         }
       }
-    }
+    },
   };
 }

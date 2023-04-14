@@ -1,4 +1,4 @@
-export function createModule(config, exposes) {
+export function createModule(exposes) {
   const temp: string[] = [];
 
   for (const expose of exposes) {
@@ -11,6 +11,7 @@ export function createModule(config, exposes) {
     `);
   }
 
+  // language=JS
   return `
     let moduleMap = {${temp.join("\n")}};
 

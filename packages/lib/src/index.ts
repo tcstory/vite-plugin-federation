@@ -16,15 +16,11 @@ export default function federation(
   );
 
   let handlerList: PluginHook[] = [];
-  let virtualFile = {};
 
   const builderInfo = {
     builder: "rollup",
     version: "",
     assetsDir: "",
-    isHost: false,
-    isRemote: false,
-    isShared: false,
   };
 
   return {
@@ -36,7 +32,6 @@ export default function federation(
         command: "",
       });
       handlerList = result.handlerList;
-      virtualFile = result.virtualFile;
 
       handlerList.forEach((handler) => {
         handler.options?.call(this, options);
@@ -52,7 +47,6 @@ export default function federation(
         command: "",
       });
       handlerList = result.handlerList;
-      virtualFile = result.virtualFile;
 
       handlerList.forEach((handler) => {
         handler.config?.call(this, config, env);
@@ -82,10 +76,20 @@ export default function federation(
 
       return null;
     },
+    async transform(code: string, id: string) {
+      for (const handler of handlerList) {
+        const result = await handler.transform?.call(this, code, id);
+        if (result) {
+          return result;
+        }
+      }
+
+      return null;
+    },
     generateBundle: function (options, bundle, isWrite) {
       for (const handler of handlerList) {
-        handler.generateBundle?.call(this, options, bundle, isWrite)
+        handler.generateBundle?.call(this, options, bundle, isWrite);
       }
-    }
+    },
   };
 }
