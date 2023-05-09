@@ -1,6 +1,6 @@
 import type { Plugin, UserConfig, ConfigEnv } from "vite";
 import type { VitePluginFederationConfig } from "../types";
-import type { PluginHook } from "../types/pluginHooks";
+import type { PluginHook } from "../types/pluginHook";
 import { defaultEntryFileName } from "./constants";
 import { registerHandlers } from "./utils";
 

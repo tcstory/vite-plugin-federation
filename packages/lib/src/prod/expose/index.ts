@@ -1,6 +1,6 @@
 import { relative, dirname } from "path";
-import type { VitePluginFederationConfig } from "../../types";
-import type { PluginHook } from "../../types/pluginHook";
+import type { VitePluginFederationConfig } from "../../../types";
+import type { PluginHook } from "../../../types/pluginHook";
 import type { OutputChunk } from "rollup";
 import { ResolvedConfig } from "vite";
 import { createModule } from "./createModule";

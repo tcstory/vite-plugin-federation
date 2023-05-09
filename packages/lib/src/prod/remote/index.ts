@@ -38,7 +38,7 @@ export default function createRemoteHandler(
     },
     async transform(code: string, id: string) {
       if (remotes.length) {
-        let ast  = null
+        let ast = null
         try {
           ast = this.parse(code)
         } catch (err) {
