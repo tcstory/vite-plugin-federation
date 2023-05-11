@@ -63,6 +63,8 @@ export default function federation(
     resolveId(id) {
       if (id === "\0__remoteEntryHelper__") {
         return "\0__remoteEntryHelper__";
+      } else if (id === '\0__federation__') {
+        return '\0__federation__'
       }
       return null;
     },
