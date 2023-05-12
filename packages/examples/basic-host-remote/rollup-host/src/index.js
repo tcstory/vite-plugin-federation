@@ -1,15 +1,15 @@
 const lazyLoad = ()=> import("remote_app/Button");
 import addButton from "./button";
+import {Btn4} from './button4'
 
 import Button1 from 'remote_app/Button1';
-import {Button2 as Btn2} from 'remote_app/Button2';
+import {Button2} from 'remote_app/Button2';
 import Btn, {Button3 as Btn3} from 'remote_app/Button3';
 
-export {Button4} from "remote_app/Button4"
-
 console.log(Button1)
-console.log(Btn2)
+console.log(Button2)
 console.log(Btn, Btn3)
+console.log(Btn4)
 
 function addDiv(root) {
     const newDiv = document.createElement("div");

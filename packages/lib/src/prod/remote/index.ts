@@ -112,8 +112,15 @@ export default function createRemoteHandler(
                     const importedName = spec.imported.name;
                     const localName = spec.local.name;
 
+                    let importedStr = "";
+                    if (importedName === localName) {
+                      importedStr = `{${localName}}`;
+                    } else {
+                      importedStr = `{${importedName} : ${localName}}`;
+                    }
+
                     node = template.ast(
-                      `const {${importedName} : ${localName}} = await __federation_method_getRemote(${JSON.stringify(
+                      `const ${importedStr} = await __federation_method_getRemote(${JSON.stringify(
                         remote.id
                       )} , ${JSON.stringify(modName)});
                         `
@@ -130,8 +137,45 @@ export default function createRemoteHandler(
           // handle the following code
           // export {Button1} from 'remote_app/Button1';
           ExportNamedDeclaration(path) {
-            console.log("ExportNamedDeclaration", path.node)
-          }
+            if (!path.node.source) {
+              return;
+            }
+            const moduleId = path.node.source.value;
+            const remote = remotes.find((r) => r.regexp.test(moduleId));
+
+            if (remote) {
+              requiresRuntime = true;
+
+              if (path.node.specifiers?.length) {
+                const modName = `.${moduleId.slice(remote.id.length)}`;
+
+                let nodeList = [];
+
+                path.node.specifiers.forEach(function (spec) {
+                  const exportedName = spec.exported.name;
+                  const localName = spec.local.name;
+
+                  let importedStr = "";
+                  if (exportedName === localName) {
+                    importedStr = `{${exportedName}}`;
+                  } else {
+                    importedStr = `{${localName} : ${exportedName}}`;
+                  }
+                  const node = template.ast(
+                    `const ${importedStr} = await __federation_method_getRemote(${JSON.stringify(
+                      remote.id
+                    )} , ${JSON.stringify(modName)});
+                    export {${exportedName}};
+                        `
+                  );
+
+                  nodeList = nodeList.concat(node);
+                });
+
+                path.replaceWithMultiple(nodeList);
+              }
+            }
+          },
         });
 
         if (requiresRuntime) {
