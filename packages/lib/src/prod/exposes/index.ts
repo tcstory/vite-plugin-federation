@@ -9,7 +9,7 @@ export default function createExposeHandler(
   pluginConfig: VitePluginFederationConfig,
   builderInfo: any
 ): PluginHook {
-  const virtualId = "\0__remoteEntryHelper__";
+  const virtualId = "\0__remote_entry_helper";
 
   pluginConfig.exposes = pluginConfig.exposes ?? {};
 
@@ -28,6 +28,8 @@ export default function createExposeHandler(
 
     return expose;
   });
+  builderInfo.exposes = exposes;
+
   const virtualFile = createModule(exposes);
 
   return {
@@ -65,8 +67,14 @@ export default function createExposeHandler(
         }
       }
     },
-    load(_id) {
-      if (_id === virtualId) {
+    resolveId(id) {
+      if (id === virtualId) {
+        return virtualId;
+      }
+      return null;
+    },
+    load(id) {
+      if (id === virtualId) {
         return virtualFile;
       }
       return null;
@@ -75,7 +83,7 @@ export default function createExposeHandler(
       let remoteEntryChunk;
       for (const key in bundle) {
         const chunk = bundle[key] as OutputChunk;
-        if (chunk?.facadeModuleId === "\x00__remoteEntryHelper__") {
+        if (chunk?.facadeModuleId === "\x00__remote_entry_helper") {
           remoteEntryChunk = chunk;
           break;
         }

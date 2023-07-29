@@ -11,7 +11,7 @@ export default function createRemoteHandler(
   pluginConfig: VitePluginFederationConfig,
   builderInfo: any
 ): PluginHook {
-  const virtualId = "\0__federation__";
+  const virtualId = "\0__federation_remote";
   pluginConfig.remotes = pluginConfig.remotes ?? {};
 
   const remotes = Object.keys(pluginConfig.remotes).map(function (key) {
@@ -29,11 +29,18 @@ export default function createRemoteHandler(
       },
     };
   });
+  builderInfo.remotes = remotes;
 
   const virtualFile = createModule(remotes);
 
   return {
     name: "",
+    resolveId(id) {
+      if (id === virtualId) {
+        return virtualId;
+      }
+      return null;
+    },
     load(_id) {
       if (_id === virtualId) {
         return virtualFile;
@@ -54,8 +61,57 @@ export default function createRemoteHandler(
           return null;
         }
 
-        let requiresRuntime = false;
+        let hasImportShared = false;
+        traverse(ast, {
+          // handle share, eg. replace import {a} from b  -> const a = __import_shared('b')
+          ImportDeclaration(path) {
+            const moduleId = path.node.source.value;
+            const shared = builderInfo.shared.find((r) => r.id === moduleId);
+            if (shared) {
+              hasImportShared = true
 
+              if (path.node.specifiers?.length) {
+                let nodeList = [];
+                path.node.specifiers.forEach(function (spec) {
+                  let node = null;
+
+                  if (spec.type === "ImportDefaultSpecifier") {
+                    node = template.ast(
+                      `const ${
+                        spec.local.name
+                      } = await __import_shared(${JSON.stringify(shared.id)})
+                      `
+                    );
+                  } else {
+                    const importedName = spec.imported.name;
+                    const localName = spec.local.name;
+
+                    let importedStr = "";
+                    if (importedName === localName) {
+                      importedStr = `{${localName}}`;
+                    } else {
+                      importedStr = `{${importedName} : ${localName}}`;
+                    }
+
+                    node = template.ast(
+                      `const ${importedStr} = await __import_shared(${JSON.stringify(
+                        shared.id
+                      )});
+                      `
+                    );
+                  }
+
+                  nodeList = nodeList.concat(node);
+                });
+
+                path.replaceWithMultiple(nodeList);
+              }
+            }
+          },
+        });
+
+        let requiresRuntime = false;
+        // handle remote import , eg replace import {a} from 'remote/b' to dynamic import
         traverse(ast, {
           CallExpression(path) {
             if (path.node.callee.type === "Import") {
@@ -181,12 +237,24 @@ export default function createRemoteHandler(
         if (requiresRuntime) {
           const node = template.ast(`
             import {
-              __federation_method_ensure, 
-              __federation_method_getRemote, 
-              __federation_method_wrapDefault, 
+              __federation_method_ensure,
+              __federation_method_getRemote,
+              __federation_method_wrapDefault,
             } from '${virtualId}';
           `);
           ast.program.body.unshift(node);
+        }
+
+        if (hasImportShared) {
+          const node = template.ast(`
+            import {
+              __import_shared
+            } from '\0__federation_shared';
+          `);
+          ast.program.body.unshift(node);
+        }
+
+        if (requiresRuntime || hasImportShared) {
           const result = generate(ast);
           return {
             code: result.code,

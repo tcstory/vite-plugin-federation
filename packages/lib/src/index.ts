@@ -21,6 +21,9 @@ export default function federation(
     builder: "rollup",
     version: "",
     assetsDir: "",
+    exposes: [],
+    remotes: [],
+    shared: [],
   };
 
   return {
@@ -61,11 +64,13 @@ export default function federation(
       });
     },
     resolveId(id) {
-      if (id === "\0__remoteEntryHelper__") {
-        return "\0__remoteEntryHelper__";
-      } else if (id === '\0__federation__') {
-        return '\0__federation__'
+      for (const handler of handlerList) {
+        const result = handler.resolveId?.call(this, id);
+        if (result) {
+          return result;
+        }
       }
+
       return null;
     },
     load(id) {

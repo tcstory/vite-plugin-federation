@@ -1,7 +1,8 @@
 import type { PluginHook } from "../types/pluginHooks";
 import type { VitePluginFederationConfig } from "../types";
-import createExposeHandler from "./prod/expose/index";
-import createRemoteHandler from "./prod/remote/index";
+import createExposeHandler from "./prod/exposes/index";
+import createRemoteHandler from "./prod/remotes/index";
+import createShareHandler from "./prod/shared/index";
 
 interface Result {
   handlerList: PluginHook[];
@@ -33,6 +34,7 @@ export const registerHandlers = (function () {
     } else if (mode === "production" || command === "build") {
       exposeHandler = createExposeHandler(pluginConfig, buildInfo);
       remoteHandler = createRemoteHandler(pluginConfig, buildInfo);
+      shareHandler = createShareHandler(pluginConfig, buildInfo);
     } else {
       //
     }

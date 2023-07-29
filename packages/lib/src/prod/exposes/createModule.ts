@@ -3,6 +3,7 @@ export function createModule(exposes) {
 
   for (const expose of exposes) {
     // const exposeFilePath = normalizePath(resolve(expose.import));
+    // language=JS
     const statement = `
         return __federation_import('${expose.name}').then(module => module.default);
     `;
